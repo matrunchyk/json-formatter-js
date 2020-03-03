@@ -1,3 +1,4 @@
+import ClipboardJS from 'clipboard';
 import {
   getType,
   isObject,
@@ -17,10 +18,14 @@ const JSON_DATE_REGEX = /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z/;
 // When toggleing, don't animated removal or addition of more than a few items
 const MAX_ANIMATED_TOGGLE_ITEMS = 10;
 
-const requestAnimationFrame = window.requestAnimationFrame || function(cb: ()=>void) { cb(); return 0; };
+const requestAnimationFrame = window.requestAnimationFrame || function (cb: () => void) {
+  cb();
+  return 0;
+};
 
 export interface JSONFormatterConfiguration {
   hoverPreviewEnabled?: boolean;
+  hoverCopyEnabled?: boolean;
   hoverPreviewArrayCount?: number;
   hoverPreviewFieldCount?: number;
   animateOpen?: boolean;
@@ -32,6 +37,7 @@ export interface JSONFormatterConfiguration {
 
 const _defaultConfig: JSONFormatterConfiguration = {
   hoverPreviewEnabled: false,
+  hoverCopyEnabled: true,
   hoverPreviewArrayCount: 100,
   hoverPreviewFieldCount: 5,
   animateOpen: true,
@@ -47,11 +53,11 @@ const _defaultConfig: JSONFormatterConfiguration = {
  *
  * JSONFormatter allows you to render JSON objects in HTML with a
  * **collapsible** navigation.
-*/
+ */
 export default class JSONFormatter {
 
   // Hold the open state after the toggler is used
-  private _isOpen : boolean = null;
+  private _isOpen: boolean = null;
 
   // A reference to the element that we render to
   private element: Element;
@@ -67,6 +73,7 @@ export default class JSONFormatter {
    * @param {object} [config=defaultConfig] -
    *  defaultConfig = {
    *   hoverPreviewEnabled: false,
+   *   hoverCopyEnabled: true,
    *   hoverPreviewArrayCount: 100,
    *   hoverPreviewFieldCount: 5
    * }
@@ -74,6 +81,7 @@ export default class JSONFormatter {
    * Available configurations:
    *  #####Hover Preview
    * * `hoverPreviewEnabled`:  enable preview on hover
+   * * `hoverCopyEnabled`:  enable copy options on hover
    * * `hoverPreviewArrayCount`: number of array items to show in preview Any
    *    array larger than this number will be shown as `Array[XXX]` where `XXX`
    *    is length of the array.
@@ -83,12 +91,15 @@ export default class JSONFormatter {
    *
    * @param {string} [key=undefined] The key that this object in it's parent
    * context
-  */
+   */
   constructor(public json: any, private open = 1, private config: JSONFormatterConfiguration = _defaultConfig, private key?: string) {
 
     // Setting default values for config object
     if (this.config.hoverPreviewEnabled === undefined) {
       this.config.hoverPreviewEnabled = _defaultConfig.hoverPreviewEnabled;
+    }
+    if (this.config.hoverCopyEnabled === undefined) {
+      this.config.hoverCopyEnabled = _defaultConfig.hoverCopyEnabled;
     }
     if (this.config.hoverPreviewArrayCount === undefined) {
       this.config.hoverPreviewArrayCount = _defaultConfig.hoverPreviewArrayCount;
@@ -130,8 +141,8 @@ export default class JSONFormatter {
     return ((this.json instanceof Date) ||
       ((this.type === 'string') &&
         (DATE_STRING_REGEX.test(this.json) ||
-        JSON_DATE_REGEX.test(this.json) ||
-        PARTIAL_DATE_REGEX.test(this.json))));
+          JSON_DATE_REGEX.test(this.json) ||
+          PARTIAL_DATE_REGEX.test(this.json))));
   }
 
   /*
@@ -198,7 +209,9 @@ export default class JSONFormatter {
    * Possible values: all JavaScript primitive types plus "array" and "null"
   */
   private get type(): string {
-    if (this.config.useToJSON && this.json && this.json['toJSON']) { return 'stringifiable'; }
+    if (this.config.useToJSON && this.json && this.json['toJSON']) {
+      return 'stringifiable';
+    }
     return getType(this.json)
   }
 
@@ -206,7 +219,7 @@ export default class JSONFormatter {
    * get object keys
    * If there is an empty key we pad it wit quotes to make it visible
   */
-  private get keys(): string[] { 
+  private get keys(): string[] {
     if (this.isObject) {
       const keys = Object.keys(this.json)
       return (!this.isArray && this.config.sortPropertiesBy)
@@ -220,14 +233,14 @@ export default class JSONFormatter {
   /**
    * Toggles `isOpen` state
    *
-  */
+   */
   toggleOpen() {
     this.isOpen = !this.isOpen;
 
     if (this.element) {
       if (this.isOpen) {
         this.appendChildren(this.config.animateOpen);
-      } else{
+      } else {
         this.removeChildren(this.config.animateClose);
       }
       this.element.classList.toggle(cssClass('open'));
@@ -235,10 +248,10 @@ export default class JSONFormatter {
   }
 
   /**
-  * Open all children up to a certain depth.
-  * Allows actions such as expand all/collapse all
-  *
-  */
+   * Open all children up to a certain depth.
+   * Allows actions such as expand all/collapse all
+   *
+   */
   openAtDepth(depth = 1) {
     if (depth < 0) {
       return;
@@ -263,7 +276,7 @@ export default class JSONFormatter {
    * Generates inline preview
    *
    * @returns {string}
-  */
+   */
   getInlinepreview() {
     if (this.isArray) {
 
@@ -290,12 +303,21 @@ export default class JSONFormatter {
     }
   }
 
+  /**
+   * Generates inline copy options
+   *
+   * @returns {object}
+   */
+  getInlinecopy() {
+    return this.json;
+  }
+
 
   /**
    * Renders an HTML element and installs event listeners
    *
    * @returns {HTMLDivElement}
-  */
+   */
   render(): HTMLDivElement {
 
     // construct the root element and assign it to this.element
@@ -340,7 +362,7 @@ export default class JSONFormatter {
       value.appendChild(objectWrapperSpan);
       togglerLink.appendChild(value);
 
-    // Primitive values
+      // Primitive values
     } else {
 
       // make a value holder element
@@ -397,6 +419,17 @@ export default class JSONFormatter {
     this.element.appendChild(togglerLink);
     this.element.appendChild(children);
 
+    // if hover copy is enabled, append the inline copy element
+    if (this.isObject && this.config.hoverCopyEnabled) {
+      const copy = createElement('span', 'copy-text');
+      const copyBtn = createElement('button', 'copy-text-button');
+      copyBtn.setAttribute('data-clipboard-text', JSON.stringify(this.json));
+      copy.appendChild(copyBtn);
+      togglerLink.parentNode.insertBefore(copy, togglerLink.nextSibling);
+
+      new ClipboardJS(copyBtn);
+    }
+
     // if formatter is set to be open call appendChildren
     if (this.isObject && this.isOpen) {
       this.appendChildren();
@@ -413,15 +446,17 @@ export default class JSONFormatter {
   /**
    * Appends all the children to children element
    * Animated option is used when user triggers this via a click
-  */
+   */
   appendChildren(animated: boolean = false) {
     const children = this.element.querySelector(`div.${cssClass('children')}`);
 
-    if (!children || this.isEmpty) { return; }
+    if (!children || this.isEmpty) {
+      return;
+    }
 
     if (animated) {
       let index = 0;
-      const addAChild = ()=> {
+      const addAChild = () => {
         const key = this.keys[index];
         const formatter = new JSONFormatter(this.json[key], this.open - 1, this.config, key);
         children.appendChild(formatter.render());
@@ -450,13 +485,13 @@ export default class JSONFormatter {
   /**
    * Removes all the children from children element
    * Animated option is used when user triggers this via a click
-  */
+   */
   removeChildren(animated: boolean = false) {
     const childrenElement = this.element.querySelector(`div.${cssClass('children')}`) as HTMLDivElement;
 
     if (animated) {
       let childrenRemoved = 0;
-      const removeAChild = ()=> {
+      const removeAChild = () => {
         if (childrenElement && childrenElement.children.length) {
           childrenElement.removeChild(childrenElement.children[0]);
           childrenRemoved += 1;
