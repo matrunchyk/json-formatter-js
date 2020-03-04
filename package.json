@@ -1,11 +1,11 @@
 {
   "name": "json-formatter-js-extended",
-  "version": "2.4.0",
+  "version": "2.4.2",
   "description": "JSON Formatter core library ",
   "main": "dist/json-formatter.cjs.js",
   "module": "dist/json-formatter.esm.js",
   "browser": "dist/json-formatter.umd.js",
-  "types": "dist/src/index.d.js",
+  "types": "dist/src/index.d.ts",
   "scripts": {
     "build": "rollup -c",
     "dev": "rollup -c rollup.dev.config.js",
