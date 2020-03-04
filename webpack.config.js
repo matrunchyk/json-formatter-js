@@ -2,10 +2,12 @@
 
 var path = require('path');
 
+// noinspection WebpackConfigHighlighting
 module.exports = {
   devtool: 'sourcemap',
+  mode: 'production',
   entry: {
-    app: ['./src/index.ts']
+    app: ['./src/index.ts'],
   },
   output: {
     path: path.join(__dirname, 'dist'),
@@ -13,10 +15,10 @@ module.exports = {
     filename: 'json-formatter.js',
     library: 'JSONFormatter',
     libraryTarget: 'commonjs2',
-    umdNamedDefine: true
+    umdNamedDefine: true,
   },
   resolve: {
-    extensions: ['.ts', '.less']
+    extensions: ['.ts', '.less'],
   },
   module: {
     rules: [
@@ -25,16 +27,16 @@ module.exports = {
         use: [
           "style-loader",
           "css-loader",
-          "less-loader"
-        ]
+          "less-loader",
+        ],
       },
       {
         test: /\.ts$/,
-        loader: 'ts-loader'
-      }
-    ]
+        loader: 'ts-loader',
+      },
+    ],
   },
   optimization: {
-    minimize: true
-  }
+    minimize: true,
+  },
 };

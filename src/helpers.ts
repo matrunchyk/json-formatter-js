@@ -85,10 +85,9 @@ export function cssClass(className:string): string {
 }
 
 /*
-  * Creates a new DOM element wiht given type and class
-  * TODO: move me to helpers
+  * Creates a new DOM element with given type and class
 */
-export function createElement(type: string, className?: string, content?: Element|string): Element {
+export function createElement(type: string, className?: string, content?: Element|string) {
   const el = document.createElement(type);
   if (className) {
     el.classList.add(cssClass(className));

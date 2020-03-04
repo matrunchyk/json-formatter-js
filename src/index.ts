@@ -1,4 +1,4 @@
-import ClipboardJS from 'clipboard';
+import select from 'select';
 import {
   getType,
   isObject,
@@ -26,6 +26,8 @@ const requestAnimationFrame = window.requestAnimationFrame || function (cb: () =
 export interface JSONFormatterConfiguration {
   hoverPreviewEnabled?: boolean;
   hoverCopyEnabled?: boolean;
+  hoverShareEnabled?: boolean;
+  hoverShareTarget?: string;
   hoverPreviewArrayCount?: number;
   hoverPreviewFieldCount?: number;
   animateOpen?: boolean;
@@ -38,6 +40,8 @@ export interface JSONFormatterConfiguration {
 const _defaultConfig: JSONFormatterConfiguration = {
   hoverPreviewEnabled: false,
   hoverCopyEnabled: true,
+  hoverShareEnabled: true,
+  hoverShareTarget: 'http://localhost',
   hoverPreviewArrayCount: 100,
   hoverPreviewFieldCount: 5,
   animateOpen: true,
@@ -74,6 +78,8 @@ export default class JSONFormatter {
    *  defaultConfig = {
    *   hoverPreviewEnabled: false,
    *   hoverCopyEnabled: true,
+   *   hoverShareEnabled: true,
+   *   hoverShareTarget: 'http://localhost',
    *   hoverPreviewArrayCount: 100,
    *   hoverPreviewFieldCount: 5
    * }
@@ -82,6 +88,8 @@ export default class JSONFormatter {
    *  #####Hover Preview
    * * `hoverPreviewEnabled`:  enable preview on hover
    * * `hoverCopyEnabled`:  enable copy options on hover
+   * * `hoverShareEnabled`:  enable share options on hover
+   * * `hoverShareTarget`:  share target url
    * * `hoverPreviewArrayCount`: number of array items to show in preview Any
    *    array larger than this number will be shown as `Array[XXX]` where `XXX`
    *    is length of the array.
@@ -100,6 +108,12 @@ export default class JSONFormatter {
     }
     if (this.config.hoverCopyEnabled === undefined) {
       this.config.hoverCopyEnabled = _defaultConfig.hoverCopyEnabled;
+    }
+    if (this.config.hoverShareEnabled === undefined) {
+      this.config.hoverShareEnabled = _defaultConfig.hoverShareEnabled;
+    }
+    if (this.config.hoverShareTarget === undefined) {
+      this.config.hoverShareTarget = _defaultConfig.hoverShareTarget;
     }
     if (this.config.hoverPreviewArrayCount === undefined) {
       this.config.hoverPreviewArrayCount = _defaultConfig.hoverPreviewArrayCount;
@@ -423,11 +437,63 @@ export default class JSONFormatter {
     if (this.isObject && this.config.hoverCopyEnabled) {
       const copy = createElement('span', 'copy-text');
       const copyBtn = createElement('button', 'copy-text-button');
-      copyBtn.setAttribute('data-clipboard-text', JSON.stringify(this.json));
+      const text = JSON.stringify(this.json);
+
+      copyBtn.setAttribute('data-clipboard-text', text);
       copy.appendChild(copyBtn);
       togglerLink.parentNode.insertBefore(copy, togglerLink.nextSibling);
 
-      new ClipboardJS(copyBtn);
+      copyBtn.addEventListener('click', () => {
+        const isRTL = document.documentElement.getAttribute('dir') == 'rtl';
+        let fakeElem = document.createElement('textarea');
+        // Prevent zooming on iOS
+        fakeElem.style.fontSize = '12pt';
+        // Reset box model
+        fakeElem.style.border = '0';
+        fakeElem.style.padding = '0';
+        fakeElem.style.margin = '0';
+        // Move element out of screen horizontally
+        fakeElem.style.position = 'absolute';
+        fakeElem.style[isRTL ? 'right' : 'left'] = '-9999px';
+        // Move element to the same position vertically
+        let yPosition = window.pageYOffset || document.documentElement.scrollTop;
+        fakeElem.style.top = `${yPosition}px`;
+
+        fakeElem.setAttribute('readonly', '');
+        fakeElem.value = text;
+
+        document.body.appendChild(fakeElem);
+
+        select(fakeElem);
+
+        try {
+          document.execCommand('copy');
+          fakeElem.blur();
+          alert('Copied to clipboard!');
+          window.getSelection().removeAllRanges();
+          document.body.removeChild(fakeElem);
+          fakeElem.remove();
+          fakeElem = null;
+        } catch (err) {
+          console.warn('Failed to copy selection')
+        }
+      });
+    }
+
+    // if hover share is enabled, append the inline share element
+    if (this.isObject && this.config.hoverShareEnabled) {
+      const share = createElement('span', 'share-text');
+      const shareBtn = createElement('button', 'share-text-button');
+      const text = btoa(JSON.stringify(this.json));
+
+      share.appendChild(shareBtn);
+      togglerLink.parentNode.insertBefore(share, togglerLink.nextSibling);
+
+      shareBtn.addEventListener('click', () => {
+        const url = `${this.config.hoverShareTarget}/#${text}`;
+        const win = window.open(url, '_blank');
+        win.focus();
+      });
     }
 
     // if formatter is set to be open call appendChildren

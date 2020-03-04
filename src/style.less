@@ -96,27 +96,36 @@
   font-style:         italic
 }
 
-.json-formatter-row > .json-formatter-copy-text {
+.json-formatter-row > .json-formatter-copy-text,
+.json-formatter-row > .json-formatter-share-text {
   opacity:            0;
   -webkit-transition: opacity .15s ease-in;
   transition:         opacity .15s ease-in;
-  font-style:         italic
+  font-style:         italic;
+  margin-left:        7px;
 }
 
-.json-formatter-row > .json-formatter-copy-text > .json-formatter-copy-text-button {
+.json-formatter-row > .json-formatter-copy-text > .json-formatter-copy-text-button,
+.json-formatter-row > .json-formatter-share-text > .json-formatter-share-text-button {
   display:                inline-block;
   font:                   normal normal normal 14px/1 FontAwesome;
   font-size:              inherit;
   text-rendering:         auto;
   -webkit-font-smoothing: antialiased;
   border:                 none;
+  cursor:                 pointer;
 }
 
 .json-formatter-row > .json-formatter-copy-text > .json-formatter-copy-text-button:after {
   content: "\f0ea";
 }
 
-.json-formatter-row:hover > .json-formatter-copy-text {
+.json-formatter-row > .json-formatter-share-text > .json-formatter-share-text-button:after {
+  content: "\f1e0";
+}
+
+.json-formatter-row:hover > .json-formatter-copy-text,
+.json-formatter-row:hover > .json-formatter-share-text {
   opacity: .6
 }
 
