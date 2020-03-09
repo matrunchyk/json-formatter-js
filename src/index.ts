@@ -35,7 +35,7 @@ export interface JSONFormatterConfiguration {
   theme?: string;
   useToJSON?: boolean;
   sortPropertiesBy?: (a: string, b: string) => number;
-  onRender?: (el: HTMLDivElement) => HTMLElement;
+  onRender: (el: HTMLDivElement, context: JSONFormatter) => HTMLElement;
 }
 
 const _defaultConfig: JSONFormatterConfiguration = {
@@ -505,7 +505,7 @@ export default class JSONFormatter {
     }
 
     if (this.config.onRender) {
-      const el = this.config.onRender(this.element as HTMLDivElement);
+      const el = this.config.onRender(this.element as HTMLDivElement, this);
       if (!el || !(el instanceof HTMLElement)) {
         throw new Error('onRender should return an instance of HTMLElement');
       }
