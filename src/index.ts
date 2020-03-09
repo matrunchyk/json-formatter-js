@@ -68,6 +68,9 @@ export default class JSONFormatter {
   // A reference to the element that we render to
   private element: Element;
 
+  // An object key
+  protected readonly key: string;
+
   /**
    * @param {object} json The JSON object you want to render. It has to be an
    * object or array. Do NOT pass raw JSON string.
@@ -104,7 +107,7 @@ export default class JSONFormatter {
    * @param {string} [key=undefined] The key that this object in it's parent
    * context
    */
-  constructor(public json: any, private open = 1, private config: JSONFormatterConfiguration = _defaultConfig, private readonly key?: string) {
+  constructor(public json: any, private open = 1, private config: JSONFormatterConfiguration = _defaultConfig, key?: string) {
 
     // Setting default values for config object
     if (this.config.hoverPreviewEnabled === undefined) {
@@ -131,6 +134,8 @@ export default class JSONFormatter {
     if (this.config.onRender === undefined) {
       this.config.onRender = _defaultConfig.onRender;
     }
+
+    this.key = key;
 
     if (this.key === '') {
       this.key = '""';
