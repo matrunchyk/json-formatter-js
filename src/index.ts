@@ -11,11 +11,11 @@ import {
 
 import './style.less';
 
-const DATE_STRING_REGEX = /(^\d{1,4}[\.|\\/|-]\d{1,2}[\.|\\/|-]\d{1,4})(\s*(?:0?[1-9]:[0-5]|1(?=[012])\d:[0-5])\d\s*[ap]m)?$/;
+const DATE_STRING_REGEX = /(^\d{1,4}[.|\\/-]\d{1,2}[.|\\/-]\d{1,4})(\s*(?:0?[1-9]:[0-5]|1(?=[012])\d:[0-5])\d\s*[ap]m)?$/;
 const PARTIAL_DATE_REGEX = /\d{2}:\d{2}:\d{2} GMT-\d{4}/;
 const JSON_DATE_REGEX = /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z/;
 
-// When toggleing, don't animated removal or addition of more than a few items
+// When toggling, don't animated removal or addition of more than a few items
 const MAX_ANIMATED_TOGGLE_ITEMS = 10;
 
 const requestAnimationFrame = window.requestAnimationFrame || function (cb: () => void) {
@@ -35,7 +35,8 @@ export interface JSONFormatterConfiguration {
   theme?: string;
   useToJSON?: boolean;
   sortPropertiesBy?: (a: string, b: string) => number;
-};
+  onRender?: (el: HTMLDivElement) => HTMLElement;
+}
 
 const _defaultConfig: JSONFormatterConfiguration = {
   hoverPreviewEnabled: false,
@@ -48,7 +49,8 @@ const _defaultConfig: JSONFormatterConfiguration = {
   animateClose: true,
   theme: null,
   useToJSON: true,
-  sortPropertiesBy: null
+  sortPropertiesBy: null,
+  onRender: null,
 };
 
 
@@ -81,7 +83,8 @@ export default class JSONFormatter {
    *   hoverShareEnabled: true,
    *   hoverShareTarget: 'http://localhost',
    *   hoverPreviewArrayCount: 100,
-   *   hoverPreviewFieldCount: 5
+   *   hoverPreviewFieldCount: 5,
+   *   onRender: null,
    * }
    *
    * Available configurations:
@@ -96,11 +99,12 @@ export default class JSONFormatter {
    * * `hoverPreviewFieldCount`: number of object properties to show for object
    *   preview. Any object with more properties that thin number will be
    *   truncated.
+   * * `onRender`: allows to control the DOM rendering process
    *
    * @param {string} [key=undefined] The key that this object in it's parent
    * context
    */
-  constructor(public json: any, private open = 1, private config: JSONFormatterConfiguration = _defaultConfig, private key?: string) {
+  constructor(public json: any, private open = 1, private config: JSONFormatterConfiguration = _defaultConfig, private readonly key?: string) {
 
     // Setting default values for config object
     if (this.config.hoverPreviewEnabled === undefined) {
@@ -123,6 +127,9 @@ export default class JSONFormatter {
     }
     if (this.config.useToJSON === undefined) {
       this.config.useToJSON = _defaultConfig.useToJSON;
+    }
+    if (this.config.onRender === undefined) {
+      this.config.onRender = _defaultConfig.onRender;
     }
 
     if (this.key === '') {
@@ -235,7 +242,8 @@ export default class JSONFormatter {
   */
   private get keys(): string[] {
     if (this.isObject) {
-      const keys = Object.keys(this.json)
+      const keys = Object.keys(this.json);
+
       return (!this.isArray && this.config.sortPropertiesBy)
         ? keys.sort(this.config.sortPropertiesBy)
         : keys;
@@ -318,21 +326,11 @@ export default class JSONFormatter {
   }
 
   /**
-   * Generates inline copy options
-   *
-   * @returns {object}
-   */
-  getInlinecopy() {
-    return this.json;
-  }
-
-
-  /**
    * Renders an HTML element and installs event listeners
    *
-   * @returns {HTMLDivElement}
+   * @returns {HTMLElement}
    */
-  render(): HTMLDivElement {
+  render(): HTMLElement {
 
     // construct the root element and assign it to this.element
     this.element = createElement('div', 'row');
@@ -360,7 +358,7 @@ export default class JSONFormatter {
       const objectWrapperSpan = createElement('span');
 
       // get constructor name and append it to wrapper span
-      var constructorName = createElement('span', 'constructor-name', this.constructorName);
+      const constructorName = createElement('span', 'constructor-name', this.constructorName);
       objectWrapperSpan.appendChild(constructorName);
 
       // if it's an array append the array specific elements like brackets and length
@@ -506,6 +504,9 @@ export default class JSONFormatter {
       togglerLink.addEventListener('click', this.toggleOpen.bind(this));
     }
 
+    if (this.config.onRender) {
+      return this.config.onRender(this.element as HTMLDivElement);
+    }
     return this.element as HTMLDivElement;
   }
 
