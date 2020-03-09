@@ -505,7 +505,10 @@ export default class JSONFormatter {
     }
 
     if (this.config.onRender) {
-      return this.config.onRender(this.element as HTMLDivElement);
+      const el = this.config.onRender(this.element as HTMLDivElement);
+      if (!el || !(el instanceof HTMLElement)) {
+        throw new Error('onRender should return an instance of HTMLElement');
+      }
     }
     return this.element as HTMLDivElement;
   }
