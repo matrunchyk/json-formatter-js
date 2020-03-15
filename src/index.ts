@@ -69,7 +69,7 @@ export default class JSONFormatter {
   private element: Element;
 
   // An object key
-  protected readonly key: string;
+  public readonly key: string;
 
   /**
    * @param {object} json The JSON object you want to render. It has to be an
