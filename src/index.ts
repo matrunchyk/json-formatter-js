@@ -487,7 +487,7 @@ export default class JSONFormatter {
     if (this.isObject && this.config.hoverShareEnabled) {
       const share = createElement('span', 'share-text');
       const shareBtn = createElement('button', 'share-text-button');
-      const text = btoa(JSON.stringify(this.json));
+      const text = btoa(encodeURI(JSON.stringify(this.json)));
 
       share.appendChild(shareBtn);
       togglerLink.parentNode.insertBefore(share, togglerLink.nextSibling);
